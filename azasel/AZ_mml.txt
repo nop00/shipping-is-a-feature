@@ -1,0 +1,304 @@
+ 
+ 
+ 
+  Commands:
+  --------
+  
+        Rest=<n>              <n> = rest in tempo ticks
+        
+        DDA=<n>               <n> = ON or OFF
+        
+        Dis_key_rls           Temporarily turns off key release. Re-enabled on next rest/note encounter.
+        
+        pan_vol=<n>           <n> = 8bit unsigned value (4bit:4bit). Upper 4bit is left volume, lower 4bit is the right side.                 
+        
+        tremolo_sub=<n>       <n> = 8bit unsigned value to subtract from current channel pan volume. 
+        
+        tremolo_up            +1 to the tremolo_sub value
+        
+        tremolo_dn            -1 to the tremolo_sub value
+        
+        key_rls=<n>           <n> = 8bit unsigned. Key release point. When rest/note length counter = <n>, key release phase is set.                
+        
+        waveform=<n>          <n> = waveform #. points to a waveform in the waveform bank.
+        
+        detune=<n>            <n> = signed WORD. Signed value added to channel frequency.
+        
+        portamento=<n>        <n> = series of bytes to setup the portamento function. See below for further details.
+        
+        vibrato <n>           <n> = series of bytes to setup the vibrato function. See below for further details.
+        
+        vibrato_state=<n>     <n> = ON/OFF (1/0). When called with ON, vibrato state is reinitialized. OFF disables vibrato.
+        
+        noise_frq=<n>         <n> = 8bit value. lower 5bits = frequency. Bit #7 = put channel in noise mode.
+        
+        set_tempo=<n>         <n> = 7bit unsigned value. Tempo = 6999.998 / (7bit * 2)
+        
+        jump <n>              <n> = label
+        
+        end                   Stop song playback.
+        
+        vol_env <n>           <n> = series of bytes for volume envelope. See below for further details
+        
+        exit_0=<n>            If counter_0 == 1, then jump to <n>, else skip past it. <n> is a @label (WORD value)
+
+        exit_1=<n>            Same as above but for counter 1
+
+        exit_2=<n>            Same as above but for counter 2
+
+        exit_3=<n>            Same as above but for counter 3
+        
+        loop_0=<n>            Decrement counter_0. If counter_0 != 00, then jump to <n>, else exit loop. <n> is a @label (WORD value)
+
+        loop_1=<n>            Same as above but for counter 1       
+
+        loop_2=<n>            Same as above but for counter 2       
+        
+        loop_3=<n>            Same as above but for counter 3
+        
+        cntr_0=<n>            Set counter_0 to <n>. <n> is an unsigned byte value.
+        
+        cntr_1=<n>            Same as above but for counter 1       
+
+        cntr_2=<n>            Same as above but for counter 2       
+        
+        cntr_3=<n>            Same as above but for counter 3       
+        
+        sample=<n1>;<n2>      <n1> = sample #. <n2> = length. Channel must be in DDA mode or else this will be interpreted as a note.
+        
+        
+        
+        
+  Directives and operators:
+  ------------------------
+        
+        =                     Assign a value or string of values to a command or note
+        .											Same as = sign
+        ;                     Variable separator for a string of operands (BYTES/WORDS)
+        ,                     Separates commands
+        #                     Sets the note to sharp
+        -                     Sets the note to neutral, *not* flat
+        @                     Creates a label for direct jump or looping
+        TRK=<n>               Indentifies the track # of the song
+        SNG=<n>               Indentifies the song # for the playlist
+        END_SNG								Marks the end of a SONG 
+        //										Comment marker
+        SNG_LST=<n>           Contains the playlist order of song #'s
+        TRK_LST               Internal. This track list is automatically generated at compile time.
+
+ 
+ 
+          
+  Note format:
+  -----------
+  
+        nso=l
+        ||| |--- length of note in tempo ticks
+        |||
+        |||----- Octave (1-8). 
+        ||------ # or -
+        |------- Notes C to A
+ 
+ 
+ 
+                         
+                    
+                    
+  Envelope info:
+  -------------
+    
+                 The envelope system is ADSR: attack, decay, sustain, release. There is no decay between A and S, or more precisely 
+                the decay rate is one tick because the routine compare logic is broken for reg2. Otherwise reg2 would be the decay
+                rate for D of ADSR. The envelope can be configured to the following shapes: The volume data is $00 to $ff, but the
+                actual volume output is current_vol / 8. It's a fixed point number 8bit value = 5bit whole and 3bit float.
+
+                             /|___
+                            /     \
+                    Type1  A  D S  R
+                            
+                             /|            /\
+                            /  \          /  \
+                    Type2  A  D R   or   A    R  (d=max)
+                            
+                            /| /\              /|/\
+                           / |/  \            /    \
+                    Type3 A  DS   R    or    A  DS  R    (S=inverse, i.e phase 5)
+                    
+                            /| /| /|
+                           / |/ |/ |
+                    Type4 A  DA DA D....
+                      
+                      
+                When using type1 envelope, 'R' triggered by the key release point command. For type2, 'R' uses 'S' value. Type3,
+                key release *is* needed for R stage if inverse 'S' rate is less than #$ff, but S will end and skip R if key release
+                isn't met or disabled. Type4 is an infinite repeated envelope form because phase reg points to phase1 (see below).
+
+                
+                command syntax:  
+                
+                  vol_env=reg0;reg1;reg2;reg3;reg4;reg5;reg6
+
+
+
+                  reg0 = (BYTE) Attack volume starting point
+                  reg1 = (BYTE) Attack rate. 
+                  reg2 = (BYTE) This is broken. Normally a decay value, but any value causes the routine to skip to reg3 phase.
+                  reg3 = (BYTE) New volume level (absolute level). The *Sustain starting point. This is basically *Decay in one tick.
+                  reg4 = (BYTE) Chooses a phase destination
+                  reg5 = (BYTE) Slow decay rate of *Sustain if 'key release' function used. 0x00 = no decay rate. 
+                  reg6 = (BYTE) *Release rate if 'key release' function used. Else *reg5* acts as *Release.
+                  
+                  phase 0 = envelope mechanism disabled
+                  phase 1 = load Attack volume starting point. goto phase 2
+                  phase 2 = add reg1 to attack volume. if volume==0xff, then goto phase 3
+                  phase 3 = load volume with reg3. load next 'phase' from reg4
+                  phase 4 = sub reg5 from volume. if volume==0x00, then goto phase 0. 
+                  phase 5 = add reg5 to volume. If volume==0xff, then goto phase 0. 
+                  phase 6 = sub reg6 from volume. If volume==0x00, no phase changing. I.e. channel stays at volume 00.
+                  phase >6 = same as phase 6.
+                
+                  
+                Note: Phase 5 allows an inverse decay. The only way to get to this phase is if reg4 points here. 
+                        No other routines choose this phase as a next step.
+                        
+                Note: The music routine can go from phase 4 to phase 6 when the note/rest length counter == key_rls. Otherwise
+                        phase 4 goes to phase 0 when it reaches 00 to stop the envelope and ends the envelope mechanism.
+
+                Note: The envelope volume is saturated to $ff and floored to $00. No clipping/wrapping occurs.
+                  
+                                     
+                                     
+                      
+  
+  
+  Portamento up/down:
+  ------------------
+  
+                 Portamento slides a channel up to down in frequency. The has no stopping point. It will slide the channel frequency
+                up or down until a note or rest command is encounted for the channel.
+
+                
+                command syntax:  
+                
+                      portamento=reg0;reg1
+                
+                    
+                      Reg0: (BYTE) Tick rate to apply frequency slide. A delay value in tempo ticks. #$01 = fastest rate.
+                      Reg1: (WORD) Signed value of slide amount
+                        
+ 
+                Note: Reg0 is pre-decremented before comparing to #$00. A value of #$00 will wrap to #$ff before compare.  
+
+
+
+  Tremolo:
+  -------
+                 Tremolo varies the channel volume. There are two functions to control/trigger the Tremolo effect. It's manual and not
+                automatic like portamento, so it's not a *real* tremolo system - just a volume inc/dec. Tremolo_dn increments the tremolo
+                reg and then subtracts it from the channel PAN volume. Tremolo_up decrements the tremolo reg and subtracts it from the 
+                channel PAN volume. Neither Tremolo_dn or Tremolo_up command 'exits' the current command string parsing routine, so you
+                can place them in series and use a channel rest to end parsing routine - if needed. 
+                
+                  Example 1:
+                  
+                      Tremolo_sub = reg0 = (BYTE) Volume subtract value. (unsigned)
+                      
+                      pan_vol_reg = $FF
+                      reg0 = 1
+                      <temp0 tick>
+                      call Tremolo_up. reg0-=1. $805 = pan_vol_reg - reg0. $805=$ff
+                      ..<next tempo tick>
+                      call Tremolo_dn. reg0+=1. $805 = pan_vol_reg - reg0. $805=$ee 
+                      ..<next tempo tick>
+
+
+                  Example 2:
+                  
+                      Tremolo_sub = reg0 = (BYTE) Volume subtract value. (unsigned)
+                      
+                      pan_vol_reg = $FF
+                      reg0 = 0
+                      <tempo tick>
+                      call Tremolo_dn. reg0+=1. $805 = pan_vol_reg - reg0. $805=$ee 
+                      call Tremolo_dn. reg0+=1. $805 = pan_vol_reg - reg0. $805=$dd 
+                      call Tremolo_dn. reg0+=1. $805 = pan_vol_reg - reg0. $805=$cc 
+                      call Tremolo_dn. reg0+=1. $805 = pan_vol_reg - reg0. $805=$bb
+                      ..<next tempo tick>
+                      call Tremolo_up. reg0-=1. $805 = pan_vol_reg - reg0. $805=$cc
+                      call Tremolo_up. reg0-=1. $805 = pan_vol_reg - reg0. $805=$dd
+                      call Tremolo_up. reg0-=1. $805 = pan_vol_reg - reg0. $805=$ee
+                      call Tremolo_up. reg0-=1. $805 = pan_vol_reg - reg0. $805=$ff
+                      ..<next tempo tick>
+
+                Note: reg0 *will* wrap on inc/dec, but the subtraction from pan volume is capped to $00(it doesn't wrap).
+                Note: tempo tick is based on reading of the command string, not a separate self contained mechanism.
+                
+                
+                
+                
+                
+
+  Vibrato:
+  -------
+                 Vibrato uses a looped triangle waveform pattern to apply a frequency adjust to the channel. A buffer accumulates
+                the delta's of reg2 at a rate of reg1. The buffer is added/subed to the main channel frequency once per tempo tick.
+                The triangle waveform has a rising phase/swing and a falling phase swing. The length from peek positive phase to
+                peek negative phase is reg3 * 2, giving the size of the overall waveform.
+                
+                
+                
+                command syntax:  
+                
+                      vibrato=reg0;reg1;reg2;reg3
+
+     
+                      reg0: (BYTE) Delay in ticks before effect starts
+                      reg1: (BYTE) Vibrato rate in tempo ticks. This is a *delay* value. #$01 = fastest. See notes.
+                      reg2: (WORD) Signed delta for vibrato (will be inverse for opposite swing)
+                      reg3: (BYTE) Length of the rising or falling 'swing' of triangle waveform pattern, from relative 0.
+
+                
+                Note: Reg0 is *not* pre-decremented before comparing to #$00. Neither is reg3.
+                Note: Reg1 *is* pre-decremented before comparing to #$00. A value of #$00 will wrap to $FF before compare/check.                      
+                
+                
+                
+                
+                
+  Loop, exit, and jump:
+  --------------------
+                
+                 The loop and exit function work off their corresponding counter. There's a total of 4 counters, allowing you to be
+                able to nest layers of loops.
+                
+                The loop is a [DO_LOOP WHILE !=00] function. The counter is decremented by one then compared against #$00. If the
+                counter is greater than #$00, then jump to the address/label in the operand of the command.
+                
+                The exit function logic is [GOTO @label IF COUNTER = 1]. The counter is *not* decremented in this function. If the
+                counter != #$01, then the @label in the operand is skipped over.
+                
+                The jump function has no testing logic. It jumps to the @label of the command operand.
+                 
+                 
+  
+  Key release:
+  -----------
+              
+                 Key release (or key off) is a function that passes the channels instruments into the last stage of an envelope. This
+                is of course assuming you have it enabled. 
+                
+                 Key_rls function setups the point in which key_release is triggered. Every note is given a length and this length is 
+                measured in tempo ticks. The length value is stored in a counter and decrement once every tempo tick. The key_rls function
+                provides a compared point for that counter. If key release is enabled, then when the length counter is decremented, it's
+                compared with the value of key_rls operand. If the compare is TRUE, then the key release phase of the envelope system is
+                initialized. The formula is trigger_point=note_length-key_rls. If a note length is 6 and a key release point is 2, then
+                key release happens at tempo tick 4 of 6.
+                
+                 If Key release is disabled via the disable command, it will be re-enabled when a new note is issued. The REST command 
+                will not re-enable key release if disabled, but it *will* trigger automatic key release phase if key release is enabled.
+              
+              
+              
+                
+                
+;END OF FILE

@@ -1,0 +1,173 @@
+
+
+;commands
+
+key_disable = $60
+tremolo_sub = $61
+tremolo_dn = $62
+tremolo_up = $63
+key_release = $64
+load_waveform = $65
+detune = $66
+portamento = $67
+vol_env = $69
+vibrato = $6a
+vbr_state = $6b
+noise = $6c
+pan_vol = $6d
+set_tempo = $6e
+jump = $6f
+stop_song = $70 
+null_2 = $71
+cntr0 = $72
+cntr1 = $75
+cntr2 = $78
+cntr3 = $7b
+loop_0 = $73
+loop_1 = $76
+loop_2 = $79
+loop_3 = $7c
+exit_0 = $74
+exit_1 = $77
+exit_2 = $7a
+exit_3 = $7d
+set_chan = $7e
+rest = $80
+
+;notes
+C1.=$00     
+C1x=$01
+D1.=$02
+D1x=$03
+E1.=$04
+F1.=$05
+F1x=$06    
+G1.=$07
+G1x=$08    
+A1.=$09    
+A1x=$0a
+B1.=$0b
+C2.=$0c    
+C2x=$0d
+D2.=$0e
+D2x=$0f
+E2.=$10
+F2.=$11
+F2x=$12    
+G2.=$13
+G2x=$14    
+A2.=$15    
+A2x=$16
+B2.=$17
+C3.=$18   
+C3x=$19
+D3.=$1a
+D3x=$1b
+E3.=$1c
+F3.=$1d
+F3x=$1e    
+G3.=$1f
+G3x=$20    
+A3.=$21    
+A3x=$22
+B3.=$23
+C4.=$24     
+C4x=$25
+D4.=$26
+D4x=$27
+E4.=$28
+F4.=$29
+F4x=$2a    
+G4.=$2b
+G4x=$2c    
+A4.=$2d    
+A4x=$2e
+B4.=$2f
+C5.=$30   
+C5x=$31
+D5.=$32
+D5x=$33
+E5.=$34
+F5.=$35
+F5x=$36    
+G5.=$37
+G5x=$38    
+A5.=$39    
+A5x=$3a
+B5.=$3b
+C6.=$3c     
+C6x=$3d
+D6.=$3e
+D6x=$3f
+E6.=$40
+F6.=$41
+F6x=$42    
+G6.=$43
+G6x=$44    
+A6.=$45    
+A6x=$46
+B6.=$47
+C7.=$48     
+C7x=$49
+D7.=$4a
+D7x=$4b
+E7.=$4c
+F7.=$4d
+F7x=$4e    
+G7.=$4f
+G7x=$50    
+A7.=$51    
+A7x=$52
+B7.=$53
+C8.=$54
+
+
+
+;variables
+DDA_mode = $ff
+WF_mode = $00
+PCM = $00
+
+
+
+;samples
+PCM.0 = 00
+PCM.1 = 1
+PCM.2 = 2
+PCM.3 = 3
+PCM.4 = 4
+PCM.5 = 5
+PCM.6 = 6
+PCM.7 = 7
+PCM.8 = 8
+PCM.9 = 9
+PCM.10 = 10
+PCM.11 = 11
+PCM.12 = 12
+PCM.13 = 13
+PCM.14 = 14
+PCM.15 = 15
+PCM.16 = 16
+PCM.17 = 17
+PCM.18 = 18
+PCM.19 = 19
+PCM.20 = 20
+PCM.21 = 21
+PCM.22 = 22
+PCM.23 = 23 
+PCM.24 = 24
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
