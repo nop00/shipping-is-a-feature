@@ -75,7 +75,7 @@ poulpe_y: .ds POULPE_COUNT * 2
     .code
     .bank $00
     .org $e000
-    .include "../_funcs.asm"
+    .include "_funcs.asm"
     .include "_macrosbase.asm"
     .include "_macros.asm"
     .include "_font.asm"
